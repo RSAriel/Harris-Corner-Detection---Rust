@@ -35,7 +35,6 @@ fn convolve(
     output
 }
 
-//Step 2
 pub fn compute_gradients(
     grayscale_vec: &[f32],
     width: u32,
@@ -69,16 +68,6 @@ pub fn compute_gradient_magnitude(
         .collect()
 }
 
-//Fazer uma função que forma o gradiente e já printa direto
-//let grad_mag = compute_gradient_magnitude(&grad_x, &grad_y);
-//visualize::save_normalized_f32_image(&grad_mag, width, height, "../images/grad_mag.png")?;
-
-
-
-//********************************************** */
-// Step 3
-//********************************************** */
-
 pub fn compute_gradient_products(
     grad_x: &[f32],
     grad_y: &[f32],
@@ -95,7 +84,7 @@ fn gaussian_kernel_3x3() -> [[f32; 3]; 3] {
         [1.0, 2.0, 1.0],
         [2.0, 4.0, 2.0],
         [1.0, 2.0, 1.0],
-    ].map(|row| row.map(|val| val / 16.0)) // normalize
+    ].map(|row| row.map(|val| val / 16.0)) 
 }
 
 pub fn smooth_gradient_products(
