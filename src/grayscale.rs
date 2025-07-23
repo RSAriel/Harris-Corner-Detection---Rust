@@ -1,66 +1,41 @@
-use image::{RgbImage, Rgb, ImageReader}; 
-use std::path::Path;
-
-pub fn to_grayscale(input_path: &str, output_path: &str) -> Result<(), image::ImageError> {
-
-    let img: image::ImageBuffer<Rgb<u8>, Vec<u8>> = image::open(&Path::new(input_path))?.to_rgb8();
-    let mut output: RgbImage = RgbImage::new(img.width(), img.height());
-
+/// Convert RGB image data to grayscale vector
+/// image_data: RGBA or RGB bytes from canvas/image
+/// width, height: image dimensions
+/// Returns: normalized grayscale values (0.0 to 1.0)
+pub fn rgb_to_grayscale_vec(image_data: &[u8], width: u32, height: u32) -> Vec<f32> {
     let w_r = 0.299;
     let w_g = 0.587;
     let w_b = 0.114;
-
-    for (x, y, pixel) in img.enumerate_pixels() {
-        let [r, g, b] = pixel.0;
-        let gray = (w_r * r as f32 + w_g * g as f32 + w_b * b as f32).round() as u8;
-        output.put_pixel(x, y, Rgb([gray, gray, gray]));
+    
+    let pixel_count = (width * height) as usize;
+    let mut grayscale_vector = Vec::with_capacity(pixel_count);
+    
+    // Handle both RGB (3 bytes) and RGBA (4 bytes) formats
+    let bytes_per_pixel = if image_data.len() == pixel_count * 4 { 4 } else { 3 };
+    
+    for i in 0..pixel_count {
+        let base_idx = i * bytes_per_pixel;
+        let r = image_data[base_idx] as f32;
+        let g = image_data[base_idx + 1] as f32;
+        let b = image_data[base_idx + 2] as f32;
+        
+        let gray_f = w_r * r + w_g * g + w_b * b;
+        grayscale_vector.push(gray_f / 255.0); // Normalize to 0.0-1.0
     }
-
-    output.save(output_path)
+    
+    grayscale_vector
 }
 
-pub fn to_grayscale_vec(input_path: &str) -> Result<(Vec<f32>, u32, u32), image::ImageError> {
-    let img = image::open(&Path::new(input_path))?.to_rgb8();
-
-    let (width, height) = img.dimensions();
-
-    let w_r = 0.299;
-    let w_g = 0.587;
-    let w_b = 0.114;
-
-    let mut grayscale_vector = Vec::with_capacity((width * height) as usize);
-
-    for (_x, _y, pixel) in img.enumerate_pixels() {
-        let [r, g, b] = pixel.0;
-        let gray_f = w_r * r as f32 + w_g * g as f32 + w_b * b as f32;
-
-        grayscale_vector.push(gray_f / 255.0);
+/// Convert grayscale float vector back to RGB image data
+pub fn grayscale_to_rgb(grayscale: &[f32], width: u32, height: u32) -> Vec<u8> {
+    let mut rgb_data = Vec::with_capacity((width * height * 3) as usize);
+    
+    for &gray_val in grayscale {
+        let gray_u8 = (gray_val * 255.0).clamp(0.0, 255.0) as u8;
+        rgb_data.push(gray_u8); // R
+        rgb_data.push(gray_u8); // G
+        rgb_data.push(gray_u8); // B
     }
-
-    Ok((grayscale_vector, width, height))
+    
+    rgb_data
 }
-
-//The code below is to test if the Sobel Operator works correctly, as the first test with an RGB file the image was dimmer.
-//I suspect maybe that the parameters for the grayscale are different or my conversion is not correct.
-//The test with an already grayscale image works fine, so I will leave it here for now.
-//https://en.wikipedia.org/wiki/Sobel_operator
-
-pub fn grayscale_image_to_vec(
-    input_path: &str
-) -> Result<(Vec<f32>, u32, u32), image::ImageError> {
-    let gray_img = ImageReader::open(Path::new(input_path))?
-        .with_guessed_format()?
-        .decode()?
-        .to_luma8();
-
-    let (width, height) = gray_img.dimensions();
-
-    let buffer = gray_img.into_raw();
-    let vec = buffer
-        .into_iter()
-        .map(|v| v as f32 / 255.0)
-        .collect();
-
-    Ok((vec, width, height))
-}
-
