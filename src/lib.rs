@@ -46,8 +46,8 @@ mod tests {
 
     #[test]
     fn test_harris_detector() {
-        let img = image::open("../images/input.png").unwrap().to_rgb8();
+        let img = image::open("images/input.png").unwrap().to_rgb8();
         let result = detect_harris_corners_default(img);
-        result.save("../images/test_output.png").unwrap();
+        result.save("images/test_output.png").unwrap();
     }
 }
